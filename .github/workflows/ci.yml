@@ -53,6 +53,12 @@ jobs:
       - run: python -m pip install -r requirements.txt
       - run: npm ci --ignore-scripts
       - run: npx playwright install --with-deps chromium
+      - name: Check renderer after browser font dependencies
+        run: |
+          pdftoppm -v
+          python -m sheet_patch demo --out /tmp/sheet-patch-renderer-input
+          python -m sheet_patch plan /tmp/sheet-patch-renderer-input/old.pdf /tmp/sheet-patch-renderer-input/new.pdf --out /tmp/sheet-patch-renderer-packet --dpi 144
+          fc-match Helvetica
       - name: Mock race and responsive checks (Chromium sandbox enabled)
         run: npm run test:browser
       - name: Real worker, PDFs, previews and ZIP (Chromium sandbox enabled)
