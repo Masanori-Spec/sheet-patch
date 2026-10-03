@@ -1,0 +1,71 @@
+{
+  "python": "3.12.14",
+  "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+  "renderer": "pdftoppm version 25.03.0",
+  "cases": [
+    {
+      "case": "synthetic 3-to-4 sheet revision",
+      "oldBytes": 5151,
+      "newBytes": 6582,
+      "oldSides": 6,
+      "newSides": 8,
+      "dpi": 144,
+      "inputPixels": 6985440,
+      "replacementSides": 4,
+      "wallSeconds": 1.518,
+      "workerSeconds": 1.332,
+      "summary": {
+        "keep": 1,
+        "move": 1,
+        "reprint": 2,
+        "retire": 1,
+        "reused": 2
+      }
+    },
+    {
+      "case": "80+80 sides, all changed, 216 DPI",
+      "oldBytes": 56049,
+      "newBytes": 61108,
+      "oldSides": 80,
+      "newSides": 80,
+      "dpi": 216,
+      "inputPixels": 179625600,
+      "replacementSides": 80,
+      "wallSeconds": 18.778,
+      "workerSeconds": 18.656,
+      "summary": {
+        "keep": 0,
+        "move": 0,
+        "reprint": 40,
+        "retire": 40,
+        "reused": 0
+      }
+    },
+    {
+      "case": "80+80 sides, all unchanged, 216 DPI",
+      "oldBytes": 56049,
+      "newBytes": 56049,
+      "oldSides": 80,
+      "newSides": 80,
+      "dpi": 216,
+      "inputPixels": 179625600,
+      "replacementSides": 0,
+      "wallSeconds": 12.428,
+      "workerSeconds": 12.281,
+      "summary": {
+        "keep": 40,
+        "move": 0,
+        "reprint": 0,
+        "retire": 0,
+        "reused": 40
+      }
+    }
+  ],
+  "childPeakRssKiB": 44136,
+  "notes": [
+    "Synthetic simple vector/text PDFs, not arbitrary real-world documents.",
+    "Peak RSS is the maximum reported child process, not aggregate worker+renderer+server memory.",
+    "Local test used system Poppler 25.03.0 with a writable temporary Fontconfig cache; bundled environment Poppler cache emitted errors.",
+    "180-second wall limit is enforced, not a promise that every accepted-size PDF succeeds."
+  ]
+}

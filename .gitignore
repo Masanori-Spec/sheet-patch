@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+node_modules/
+coverage/
+test-results/
+browser-artifacts/
+demo-input/
+demo-packet/
+forced-packet/
+*.log
+.DS_Store

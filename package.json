@@ -1,0 +1,15 @@
+{
+  "name": "sheet-patch",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local ordered-duplex reuse and replacement evidence packets",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "test": "node --test web/ui-tests/model.test.mjs",
+    "test:browser": "node web/ui-tests/browser.test.cjs",
+    "test:browser:real": "node web/ui-tests/backend.test.cjs",
+    "check:syntax": "node --check web/app.js && node --check web/model.js && node --check web/ui-tests/browser.test.cjs && node --check web/ui-tests/backend.test.cjs"
+  },
+  "devDependencies": { "@playwright/test": "1.56.0" }
+}

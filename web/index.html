@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#204f3e">
+  <title>Sheet Patch — A smaller second print run</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#workspace">Skip to workspace</a>
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="Sheet Patch home"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>sheet<span class="brand-light">patch</span><span class="edition">LOCAL EDITION</span></a>
+    <span class="local-badge"><span aria-hidden="true"></span>Runs on this computer</span>
+  </header>
+
+  <main id="workspace">
+    <section class="intro" aria-labelledby="intro-title">
+      <div class="intro-copy">
+        <p class="eyebrow">THE DUPLEX REVISION WORKBENCH</p>
+        <h1 id="intro-title">New revision.<br><em>Fewer new sheets.</em></h1>
+        <p class="intro-description">Compare two print-ready PDFs. Find whole sheets you can keep, move, or replace. Build the next edition from what you already printed.</p>
+        <div class="intro-tags"><span>Unbound sheets</span><span>Both sides together</span><span>No cloud uploads</span></div>
+      </div>
+      <div class="hero-illustration" aria-hidden="true">
+        <div class="sheet sheet-back"><div class="mock-rule"></div><div class="mock-heading"></div><div class="mock-copy"></div><span>02 / BACK</span></div>
+        <div class="sheet sheet-front"><div class="print-mark">S/P</div><div class="mock-rule"></div><div class="mock-title">A better<br>second edition.</div><div class="mock-copy"></div><span>01 / FRONT</span><div class="reuse-stamp">KEEP<br><small>BOTH SIDES</small></div></div>
+        <div class="side-note">Less reprinting.<br>More careful reuse.</div>
+      </div>
+    </section>
+
+    <aside class="scope-note" aria-label="Required PDF format">
+      <span class="note-symbol" aria-hidden="true">!</span>
+      <div><strong>Start with already-imposed duplex PDFs.</strong> Each consecutive pair is one physical sheet: front 1, back 1, front 2, back 2. Whole front/back pairs stay together. This tool does not impose pages, set feed orientation, or control your printer.</div>
+    </aside>
+
+    <section class="input-section panel" aria-labelledby="input-title">
+      <div class="section-heading"><div><p class="eyebrow">01 / COMPARE</p><h2 id="input-title">Bring both editions</h2></div><button id="demo-button" class="button button-quiet" type="button"><span aria-hidden="true">↗</span> Try a sample revision</button></div>
+      <div class="file-grid">
+        <div class="file-drop" id="old-drop">
+          <div class="file-label"><span class="edition-number">A</span><div><h3>Previously printed</h3><p>The sheets you have on hand</p></div></div>
+          <label class="upload-control" for="old-file"><span class="upload-icon" aria-hidden="true">↥</span><span class="upload-title" id="old-file-name">Choose the old PDF</span><span class="upload-detail" id="old-file-detail">or drop it here · PDF, up to 16 MiB</span><input id="old-file" type="file" accept=".pdf,application/pdf" aria-describedby="old-file-detail old-file-error"></label>
+          <p id="old-file-error" class="field-error" hidden></p>
+        </div>
+        <div class="file-drop" id="new-drop">
+          <div class="file-label"><span class="edition-number new-number">B</span><div><h3>New revision</h3><p>The finished edition you want</p></div></div>
+          <label class="upload-control" for="new-file"><span class="upload-icon" aria-hidden="true">↥</span><span class="upload-title" id="new-file-name">Choose the new PDF</span><span class="upload-detail" id="new-file-detail">or drop it here · PDF, up to 16 MiB</span><input id="new-file" type="file" accept=".pdf,application/pdf" aria-describedby="new-file-detail new-file-error"></label>
+          <p id="new-file-error" class="field-error" hidden></p>
+        </div>
+      </div>
+      <div class="run-settings">
+        <fieldset class="resolution"><legend>Comparison detail <span>Raster resolution</span></legend><div class="segmented"><label><input type="radio" name="dpi" value="72"><span>72 <small>DPI</small></span></label><label><input type="radio" name="dpi" value="144" checked><span>144 <small>DPI</small></span></label><label><input type="radio" name="dpi" value="216"><span>216 <small>DPI</small></span></label></div></fieldset>
+        <p class="limits">Up to 80 sides per PDF<br>200 million input pixels · 180-second processing limit</p>
+        <div class="run-actions"><button id="cancel-button" class="button button-quiet" type="button" hidden>Cancel</button><button id="analyze-button" class="button button-primary" type="button" disabled>Build sheet plan <span aria-hidden="true">→</span></button></div>
+      </div>
+      <div id="status-region" class="status-region" role="status" aria-live="polite" aria-atomic="true"><span id="status-icon" aria-hidden="true">○</span><span id="status-text">Choose both PDFs to begin. Your files stay on this computer.</span></div>
+      <p id="error-region" class="error-region" role="alert" hidden></p>
+    </section>
+
+    <section id="results-section" class="results-section" aria-labelledby="results-title" hidden>
+      <div class="section-heading results-heading"><div><p class="eyebrow">02 / ASSEMBLE</p><h2 id="results-title" tabindex="-1">Your next print run</h2></div><span id="result-state" class="result-state">Ready for review</span></div>
+      <div id="stale-notice" class="stale-notice" hidden><strong>This plan is out of date.</strong> Rebuild it to apply your changes. Export is disabled until then.</div>
+      <div class="summary-grid" aria-label="Sheet plan summary">
+        <div class="summary-cell"><span class="summary-value" id="reuse-count">0</span><div><strong>reuse candidates</strong><span id="reuse-detail">of 0 new sheets</span></div></div>
+        <div class="summary-cell reprint-cell"><span class="summary-value" id="reprint-count">0</span><div><strong>whole sheets to print</strong><span id="reprint-detail">0 PDF sides in the patch</span></div></div>
+        <div class="summary-cell retire-cell"><span class="summary-value" id="retire-count">0</span><div><strong>old sheets to retire</strong><span>remove from this edition</span></div></div>
+      </div>
+      <aside class="review-warning"><span aria-hidden="true">!</span><div><strong>Matching pixels are a reuse candidate, not proof of print identity.</strong><p id="raster-warning">Raster equality is checked at the selected DPI. Small details, color, overprint, and other print properties may differ. Review both sides and the original PDFs before printing or assembling.</p></div></aside>
+      <ul id="server-warnings" class="server-warnings" hidden></ul>
+      <div class="plan-layout">
+        <section class="assembly-panel panel" aria-labelledby="assembly-title">
+          <div class="assembly-header"><div><h3 id="assembly-title">Sheet-by-sheet assembly</h3><p>First label old physical sheets with their original numbers. Then follow the new edition order, keeping each front/back pair intact.</p></div><span id="sheet-count-label" class="count-label">0 SHEETS</span></div>
+          <div class="table-scroll"><table><caption class="sr-only">Whole-sheet assembly plan. Select a sheet to inspect both sides.</caption><thead><tr><th scope="col">New sheet</th><th scope="col">Action / source</th><th scope="col" class="force-heading">Force<br>reprint</th></tr></thead><tbody id="assembly-rows"></tbody></table></div>
+          <div id="retire-list" class="retire-list"></div>
+          <div class="legend"><span><i class="legend-dot keep-dot"></i>Keep in place</span><span><i class="legend-dot move-dot"></i>Move as a pair</span><span><i class="legend-dot reprint-dot"></i>Print both sides</span></div>
+        </section>
+        <section class="inspection-panel panel" aria-labelledby="inspection-title">
+          <div class="inspection-header"><div><p class="eyebrow">SIDE-BY-SIDE CHECK</p><h3 id="inspection-title">Inspect new sheet <span id="selected-sheet-number">1</span></h3></div><div class="inspection-nav"><button id="previous-sheet" class="icon-button" type="button" aria-label="Inspect previous sheet">←</button><button id="next-sheet" class="icon-button" type="button" aria-label="Inspect next sheet">→</button></div></div>
+          <p id="inspection-note" class="inspection-note"></p>
+          <div class="preview-label-row"><span>FRONT</span><span>BACK</span></div>
+          <div class="preview-edition-label">NEW EDITION <span id="new-preview-label"></span></div>
+          <div class="preview-pair"><figure><a id="new-front-link" target="_blank" rel="noopener" aria-label="Open new front preview"><img id="new-front-image" alt="" loading="lazy"></a><figcaption id="new-front-caption"></figcaption></figure><figure><a id="new-back-link" target="_blank" rel="noopener" aria-label="Open new back preview"><img id="new-back-image" alt="" loading="lazy"></a><figcaption id="new-back-caption"></figcaption></figure></div>
+          <div class="preview-edition-label old-preview-label">PREVIOUSLY PRINTED <span id="old-preview-label"></span></div>
+          <div id="old-preview-pair" class="preview-pair"><figure><a id="old-front-link" target="_blank" rel="noopener" aria-label="Open old front preview"><img id="old-front-image" alt="" loading="lazy"></a><figcaption id="old-front-caption"></figcaption></figure><figure><a id="old-back-link" target="_blank" rel="noopener" aria-label="Open old back preview"><img id="old-back-image" alt="" loading="lazy"></a><figcaption id="old-back-caption"></figcaption></figure></div>
+          <p id="no-old-preview" class="no-preview" hidden>No old sheet assigned. Print this whole front/back pair.</p>
+          <p class="preview-footnote">These are thumbnail previews (up to 450 px). Open them for a closer look, then inspect both sides in the original PDFs at full zoom before reuse.</p>
+        </section>
+      </div>
+      <section class="export-panel panel" aria-labelledby="export-title"><div class="export-symbol" aria-hidden="true">↓</div><div class="export-copy"><h3 id="export-title">Take the plan to the print table</h3><p>Download a ZIP packet with assembly instructions and a patch PDF when replacements are needed. Recheck duplex settings and feed orientation in your own print workflow.</p><label class="review-checkbox"><input id="review-confirmation" type="checkbox"><span>I have reviewed both sides of the reuse candidates in the original PDFs and understand the raster comparison limits.</span></label></div><div class="export-action"><a id="export-link" class="button button-primary" aria-disabled="true" tabindex="-1">Download packet <span aria-hidden="true">↧</span></a><span id="export-hint">Review the plan to enable export</span></div></section>
+      <details class="technical-details"><summary>File fingerprints &amp; comparison settings</summary><dl><div><dt>Previously printed</dt><dd id="old-file-fingerprint"></dd></div><div><dt>New revision</dt><dd id="new-file-fingerprint"></dd></div><div><dt>Raster comparison</dt><dd id="comparison-settings"></dd></div></dl></details>
+    </section>
+    <footer><span class="footer-brand">sheetpatch</span><p>A careful second print run. Whole sheets, both sides.</p><span>LOCAL PROCESSING / NO PRINTER CONTROL</span></footer>
+  </main>
+</body>
+</html>
