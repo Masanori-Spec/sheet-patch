@@ -12,6 +12,7 @@ import json
 import logging
 import math
 import os
+import re
 import struct
 import subprocess
 import time
@@ -241,7 +242,37 @@ def thumbnail_png(w, h, rgb, max_width=450):
         return struct.pack('>I',len(payload))+tag+payload+struct.pack('>I',zlib.crc32(tag+payload)&0xffffffff)
     return b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>IIBBBBB',tw,th,8,2,0,0,0))+chunk(b'IDAT',zlib.compress(raw))+chunk(b'IEND',b'')
 
-def render_sides(path, doc, dpi, work, prefix, progress):
+def check_renderer_diagnostics(returncode, stderr, notices=None):
+    """Only known Fontconfig timestamp-maintenance notices are nonfatal.
+
+    FcDirCacheCreateUUID/DeleteUUID emits this after a font-cache metadata
+    operation. It does not describe PDF interpretation or font substitution.
+    Preserve every distinct notice in the output; never ignore unknown lines.
+    """
+    valid_encoding = True
+    try:
+        text = stderr.decode('utf-8', errors='strict')
+    except UnicodeDecodeError:
+        text = stderr.decode('utf-8', errors='replace')
+        valid_encoding = False
+    lines = [line for line in text.replace('\r\n', '\n').split('\n') if line]
+    known = [line for line in lines if valid_encoding and len(line) <= 512 and
+        all(c.isprintable() for c in line) and
+        re.fullmatch(r'Unable to revert mtime: /[^\x00-\x1f\x7f]+', line) and
+        line.count('Unable to revert mtime:') == 1]
+    if returncode or not valid_encoding or len(known) != len(lines) or (known and notices is None):
+        diagnostic = ' '.join(text.split())
+        diagnostic = ''.join(c for c in diagnostic if c.isprintable())[:800]
+        detail = f' Exit code {returncode}.'
+        if diagnostic:
+            detail += ' Renderer diagnostic: ' + diagnostic
+        raise InputError('The renderer reported an error or warning; repair or flatten the PDF first.' + detail)
+    if notices is not None:
+        for line in known:
+            if line not in notices:
+                notices.append(line)
+
+def render_sides(path, doc, dpi, work, prefix, progress, notices=None):
     hashes = []
     for i, geometry in enumerate(doc.geometry):
         progress(f'Rendering {prefix} side {i+1} of {len(doc.geometry)}')
@@ -252,15 +283,7 @@ def render_sides(path, doc, dpi, work, prefix, progress):
                 stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=25, check=False)
         except subprocess.TimeoutExpired as exc:
             raise InputError('A PDF side exceeded the 25-second renderer limit.') from exc
-        if process.returncode or process.stderr.strip():
-            # Diagnostics stay local. Bound and normalize untrusted renderer text;
-            # never ignore warnings or dump an input document into a log.
-            diagnostic = ' '.join(process.stderr.decode('utf-8', errors='replace').split())
-            diagnostic = ''.join(c for c in diagnostic if c.isprintable())[:800]
-            detail = f' Exit code {process.returncode}.'
-            if diagnostic:
-                detail += ' Renderer diagnostic: ' + diagnostic
-            raise InputError('The renderer reported an error or warning; repair or flatten the PDF first.' + detail)
+        check_renderer_diagnostics(process.returncode, process.stderr, notices)
         ppm = stem.with_suffix('.ppm')
         if not ppm.exists() or ppm.stat().st_size > MAX_SIDE_PIXELS*3+1024:
             raise InputError('Renderer output exceeds the supported limit.')
@@ -299,8 +322,9 @@ def analyze(old_path, new_path, work, old_name='old.pdf', new_name='new.pdf', dp
             raise InputError('Force-reprint sheet number is outside the new document.')
         version = subprocess.run(['pdftoppm','-v'],capture_output=True,timeout=5,check=True)
         renderer = (version.stderr or version.stdout).decode(errors='replace').splitlines()[0]
-        oh = render_sides(old_path,old,dpi,work,'old',progress)
-        nh = render_sides(new_path,new,dpi,work,'new',progress)
+        environment_notices = []
+        oh = render_sides(old_path,old,dpi,work,'old',progress,environment_notices)
+        nh = render_sides(new_path,new,dpi,work,'new',progress,environment_notices)
         op, np = list(zip(oh[::2],oh[1::2])), list(zip(nh[::2],nh[1::2]))
         forced_indices = {i-1 for i in force}
         assembly, retire = plan_pairs(op,np,forced_indices)
@@ -316,7 +340,7 @@ def analyze(old_path, new_path, work, old_name='old.pdf', new_name='new.pdf', dp
             writer.write(patch)
             # Export may exceed input bytes due to object copies; same safety cap.
             exported = inspect_pdf(patch,'replacement.pdf',dpi)
-            ph = render_sides(patch,exported,dpi,work,'patch',progress)
+            ph = render_sides(patch,exported,dpi,work,'patch',progress,environment_notices)
             expected = [nh[j] for i in replacements for j in (2*(i-1),2*(i-1)+1)]
             if ph != expected:
                 raise InputError('Export verification failed: replacement sides differ from their source.')
@@ -326,7 +350,8 @@ def analyze(old_path, new_path, work, old_name='old.pdf', new_name='new.pdf', dp
             matchKind='ordered-pair raster candidate',renderer=renderer,
             renderOptions=['RGB','-aa yes','-aaVector yes','full page; equal media/crop/trim/bleed/art boxes'],
             old=old.info,new=new.info,summary=summary,assembly=assembly,retire=retire,
-            oldSideHashes=oh,newSideHashes=nh,warnings=WARNINGS,
+            oldSideHashes=oh,newSideHashes=nh,environmentNotices=environment_notices,
+            warnings=WARNINGS+['Font-cache maintenance notice: '+line for line in environment_notices],
             verification=dict(replacementRerenderPerformed=bool(replacements),replacementRerenderMatched=True,replacementSideCount=len(replacements)*2,
                 uniqueOldConsumption=True,newSheetCoverage=len(assembly),inputPixels=total_pixels,
                 elapsedSeconds=round(time.monotonic()-start,3)))

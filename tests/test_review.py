@@ -343,5 +343,49 @@ class ReviewRunnerTests(unittest.TestCase):
             manager.close()
 
 
+class ReviewRendererDiagnosticTests(unittest.TestCase):
+    def test_known_fontcache_notices_preserve_unicode_paths_order_and_deduplicate(self):
+        lines = ['Unable to revert mtime: /usr/share/fonts',
+                 'Unable to revert mtime: /tmp/日本語 Fonts']
+        notices = []
+        engine.check_renderer_diagnostics(0, ('\n'.join(lines + lines) + '\n').encode(), notices)
+        self.assertEqual(notices, lines)
+
+    def test_malformed_utf8_is_not_normalized_into_known_notice(self):
+        for diagnostic in (b'Unable to revert mtime: /fonts/\xff\n',
+                           b'Unable to revert mtime: /fonts/\xc0\xaf\n'):
+            with self.subTest(diagnostic=diagnostic), self.assertRaises(InputError):
+                engine.check_renderer_diagnostics(0, diagnostic, [])
+
+    def test_control_framing_is_not_stripped_into_known_notice(self):
+        notice = b'Unable to revert mtime: /usr/share/fonts'
+        for diagnostic in (b'\t' + notice + b'\n', b'\v' + notice + b'\n',
+                           notice + b'\v\n', notice + b'\f\n',
+                           notice + b'\x1c\n'):
+            with self.subTest(diagnostic=diagnostic), self.assertRaises(InputError):
+                engine.check_renderer_diagnostics(0, diagnostic, [])
+
+    def test_mixed_warning_never_commits_partial_environment_notices(self):
+        known = b'Unable to revert mtime: /usr/share/fonts\n'
+        for unknown in (b'Syntax Warning: font substitution\n', b'Syntax Error: damaged font\n',
+                        b'Fontconfig error: Cannot load default config file\n',
+                        b'Unable to revert mtime: relative/path\n'):
+            for data in (known + unknown, unknown + known):
+                notices = ['existing notice']
+                with self.subTest(data=data), self.assertRaises(InputError):
+                    engine.check_renderer_diagnostics(0, data, notices)
+                self.assertEqual(notices, ['existing notice'])
+
+    def test_unknown_and_nonzero_remain_fatal_with_bounded_diagnostic(self):
+        known = b'Unable to revert mtime: /usr/share/fonts\n'
+        for returncode, diagnostic in ((1, known), (-9, known), (0, b'x' * 10000),
+                                       (0, b'Unable to revert mtime: /' + b'x' * 513)):
+            notices = []
+            with self.subTest(returncode=returncode), self.assertRaises(InputError) as caught:
+                engine.check_renderer_diagnostics(returncode, diagnostic, notices)
+            self.assertEqual(notices, [])
+            self.assertLess(len(str(caught.exception)), 1000)
+
+
 if __name__ == '__main__':
     unittest.main()

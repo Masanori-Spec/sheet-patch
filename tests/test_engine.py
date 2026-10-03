@@ -9,7 +9,7 @@ from unittest.mock import patch
 import zipfile
 from pypdf import PdfReader,PdfWriter
 from pypdf.generic import NameObject,DictionaryObject,ArrayObject,NumberObject,FloatObject
-from sheet_patch.engine import plan_pairs,verify_assembly,analyze,inspect_pdf,InputError,parse_ppm,report_html,MAX_BYTES
+from sheet_patch.engine import plan_pairs,verify_assembly,check_renderer_diagnostics,analyze,inspect_pdf,InputError,parse_ppm,report_html,MAX_BYTES
 from sheet_patch.demo import make_pdf,demo_files
 
 class MatchingTests(unittest.TestCase):
@@ -144,6 +144,33 @@ class PdfTests(unittest.TestCase):
         self.assertIn('Exit code 0',str(caught.exception))
         self.assertLess(len(str(caught.exception)),1000)
         self.assertFalse((self.root/'packet.zip').exists())
+
+    def test_fontconfig_metadata_notice_classification_is_narrow(self):
+        notice=b'Unable to revert mtime: /usr/share/fonts\n'
+        collected=[]
+        check_renderer_diagnostics(0,notice+notice,collected)
+        self.assertEqual(collected,['Unable to revert mtime: /usr/share/fonts'])
+        for code,stderr in ((1,notice),(0,notice+b'Syntax Warning: missing font\n'),(0,b'Unable to revert mtime: relative/path\n'),(0,b'Fontconfig error: cache failure\n'),(0,b'Unable to revert mtime: /fonts\x00oops')):
+            with self.subTest(code=code,stderr=stderr),self.assertRaises(InputError):
+                check_renderer_diagnostics(code,stderr,[])
+        with self.assertRaises(InputError):check_renderer_diagnostics(0,notice)
+
+    def test_fontconfig_notice_is_recorded_without_changing_raster_verification(self):
+        import subprocess
+        original=subprocess.run
+        notice=b'Unable to revert mtime: /usr/share/fonts\n'
+        def with_notice(*args,**kwargs):
+            result=original(*args,**kwargs)
+            if '-f' in args[0] and result.returncode==0:
+                result.stderr=result.stderr+notice
+            return result
+        with patch('sheet_patch.engine.subprocess.run',side_effect=with_notice):
+            result=self.run_plan(*demo_files())
+        self.assertEqual(result['environmentNotices'],['Unable to revert mtime: /usr/share/fonts'])
+        self.assertIn('Font-cache maintenance notice: Unable to revert mtime: /usr/share/fonts',result['warnings'])
+        self.assertTrue(result['verification']['replacementRerenderMatched'])
+        self.assertIn('Font-cache maintenance notice', (self.root/'work'/'assembly.html').read_text())
+        self.assertEqual(result['summary']['reprint'],2)
 
     def test_html_escape(self):
         r=self.run_plan(*demo_files(),old_name='<img src=x onerror=alert(1)>.pdf')

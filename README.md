@@ -60,7 +60,7 @@ Conservative MVP acceptance rules deliberately reject rather than silently flatt
 - **72, 144 or 216 DPI**; at most **20 million pixels per side** and **200 million input pixels** over both documents; export verification adds the replacement sides' pixels
 - Object traversal limited to 100,000 indirect objects and depth 100; decoded page/Form/tiling-pattern content limited to 32 MiB and 1,000,000 operators per content stream
 
-The worker has a **180-second wall deadline**. Each process inherits a **120-second CPU limit**, **1.5 GiB address-space limit**, **64 MiB individual file limit**, and 64-open-file limit. Each renderer invocation also has a 25-second deadline. CPU and memory limits are per process, **not** aggregate across worker, renderer, server and browser. Smaller inputs can still be rejected if unusually expensive, malformed or unsupported. See [security](docs/SECURITY.md) and [verification](docs/VERIFICATION.md).
+The worker has a **180-second wall deadline**. Each process inherits a **120-second CPU limit**, **1.5 GiB address-space limit**, **64 MiB individual file limit**, and 64-open-file limit. Each renderer invocation also has a 25-second deadline. CPU and memory limits are per process, **not** aggregate across worker, renderer, server and browser. Smaller inputs can still be rejected if unusually expensive, malformed or unsupported. Known Fontconfig timestamp-maintenance notices are preserved in the UI and packet; other renderer diagnostics and nonzero exits fail closed. See [security](docs/SECURITY.md) and [verification](docs/VERIFICATION.md).
 
 ## How matching works
 

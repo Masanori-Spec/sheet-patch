@@ -4,7 +4,7 @@ Local source verification, 2026-10-03. This file records observed results; CI/br
 
 ## Executed locally
 
-- 52 Python unit/integration/review tests passed on Python 3.12.14, Linux
+- 59 Python unit/integration/review tests passed on Python 3.12.14, Linux
 - 14,641 exhaustive small old/new sequences checked for maximum matching count, one-use old supply, exact ordered-pair equality, same-position reservation and retire partition
 - Separate forced-demand exhaustive cases ensure forced new positions do not consume reusable old supply
 - PDF fixtures cover unchanged, changed back, reordered sheets, insertion/deletion, duplicate and blank sheets, swapped sides, geometry difference, forced reprint and no-empty-PDF behavior
@@ -19,8 +19,11 @@ The local environment's bundled Poppler emitted Fontconfig cache errors. Those e
 
 ## Browser status
 
-Initial public CI at commit `acb866c3963850538ac0022989a8a92aab4d153d` passed both Python 3.12/3.13 jobs and the mock browser suite, but the real-backend browser test rejected a renderer warning/error. The initial generic message did not expose its cause. A follow-up preserves strict rejection, adds bounded renderer diagnostics and a synthetic preflight after browser font installation, and corrects a skip-link visibility defect found in the screenshots. The updated browser suite remains pending until CI proves it passes. [Initial run](https://github.com/Masanori-Spec/sheet-patch/actions/runs/37122609710)
+Initial public CI at commit `acb866c3963850538ac0022989a8a92aab4d153d` passed both Python 3.12/3.13 jobs and the mock browser suite, but the real-backend browser test rejected a generic renderer diagnostic. [Initial run](https://github.com/Masanori-Spec/sheet-patch/actions/runs/37122609710)
 
+[Diagnostic revision CI](https://github.com/Masanori-Spec/sheet-patch/actions/runs/37123156366) passed the cold CLI preflight and mock browser checks, while actual browser-driven rendering returned exit 0 with `Unable to revert mtime` notices for system font directories. The exact diagnostic is from Fontconfig's cache UUID/timestamp-maintenance path, not PDF parsing. Current code preserves these narrowly recognized notices in `environmentNotices` and visible UI/HTML warnings. It still rejects unknown diagnostics, PDF warnings, substitution errors and nonzero exits. A local end-to-end regression injects the notice into real rendering, verifies it is retained in the packet, and verifies the replacement raster still matches. Independent boundary regressions reject malformed UTF-8, control framing, mixed warnings, nonzero exits and oversized notices, and preserve valid Unicode paths with stable deduplication. Public real-browser completion remains pending until the corrected commit passes CI.
+
+The screenshot-confirmed floating skip-link defect was corrected with clipped-but-focusable styling plus focus/scrolled desktop/mobile regressions. Revision screenshots confirmed the unfocused overlay is gone.
 
 Local Chromium could not launch because this environment prohibits its process-singleton socket. No sandbox bypass was attempted and no local visual/browser pass is claimed. Both authored browser suites launch Chromium with `chromiumSandbox: true` on Ubuntu 22.04 CI:
 
