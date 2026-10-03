@@ -76,8 +76,47 @@ const server = http.createServer(async (req, res) => {
   page.on('pageerror', error => errors.push(error.message));
   const outsideRequests = [];
   page.on('request', request => { if (!request.url().startsWith(url) && !request.url().startsWith('data:')) outsideRequests.push(request.url()); });
+  async function assertSkipLinkState(label, focused = false) {
+    const link = await page.locator('.skip-link').evaluate(element => {
+      const style = getComputedStyle(element);
+      const rect = element.getBoundingClientRect();
+      return { focused: document.activeElement === element, display: style.display, visibility: style.visibility,
+        clip: style.clip, clipPath: style.clipPath, overflow: style.overflow,
+        width: rect.width, height: rect.height, top: rect.top, left: rect.left };
+    });
+    assert.equal(link.focused, focused, `${label}: focus state`);
+    assert.notEqual(link.display, 'none', `${label}: remains in the keyboard tab order`);
+    assert.equal(link.visibility, 'visible', `${label}: remains available to assistive technology`);
+    if (focused) {
+      assert.equal(link.clip, 'auto', `${label}: focused link is not clipped`);
+      assert.equal(link.clipPath, 'none', `${label}: focused link has no clipping path`);
+      assert.equal(link.overflow, 'visible', `${label}: focused text is visible`);
+      assert.ok(link.width > 100 && link.height > 24 && link.top >= 0 && link.left >= 0, `${label}: focused link is visible in the viewport`);
+    } else {
+      assert.equal(link.clip, 'rect(0px, 0px, 0px, 0px)', `${label}: unfocused content is fully clipped`);
+      assert.equal(link.clipPath, 'inset(50%)', `${label}: clipping survives full-page capture after scrolling`);
+      assert.equal(link.overflow, 'hidden', `${label}: no overflowing text`);
+      assert.ok(link.width <= 1 && link.height <= 1, `${label}: hidden link occupies at most one pixel`);
+    }
+  }
+  async function assertScrolledSkipLink(label) {
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    assert.ok(await page.evaluate(() => window.scrollY > 0), `${label}: regression runs after scrolling`);
+    await assertSkipLinkState(`${label}, hidden`);
+    await page.locator('.skip-link').focus();
+    await assertSkipLinkState(`${label}, focused`, true);
+    await page.keyboard.press('Tab');
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await assertSkipLinkState(`${label}, blurred and scrolled again`);
+  }
   try {
     await page.goto(url);
+    await assertSkipLinkState('Initial desktop');
+    await page.keyboard.press('Tab');
+    await assertSkipLinkState('First keyboard tab', true);
+    await page.screenshot({ path: path.join(artifacts, 'skip-link-focused-desktop.png') });
+    await page.keyboard.press('Tab');
+    await assertSkipLinkState('Desktop after keyboard blur');
     assert.equal(await page.locator('#analyze-button').isDisabled(), true);
     await page.screenshot({ path: path.join(artifacts, 'initial-desktop.png'), fullPage: true });
     await page.locator('#demo-button').click();
@@ -109,6 +148,7 @@ const server = http.createServer(async (req, res) => {
     await page.locator('[aria-label="Force reprint of new sheet 1"]').uncheck();
     await page.locator('#analyze-button').click();
     await page.waitForFunction(() => document.getElementById('reuse-count').textContent === '2');
+    await assertScrolledSkipLink('Desktop plan');
     await page.screenshot({ path: path.join(artifacts, 'plan-desktop.png'), fullPage: true });
     await page.locator('input[name="dpi"][value="216"]').check();
     assert.equal(await page.locator('#stale-notice').isVisible(), true);
@@ -165,9 +205,10 @@ const server = http.createServer(async (req, res) => {
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true, `No horizontal overflow at ${width}px`);
     }
     await page.setViewportSize({ width: 375, height: 850 });
+    await assertScrolledSkipLink('Mobile plan');
     await page.screenshot({ path: path.join(artifacts, 'plan-mobile.png'), fullPage: true });
     assert.deepEqual(errors, [], 'No browser JavaScript errors');
     assert.deepEqual(outsideRequests, [], 'No non-loopback resource requests');
-    console.log('PASS: demo, assembly, paired previews, export review gate, force/unforce rerun, DPI invalidation, delayed create cancellation, stale poll rejection, local file replacement, safe filename rendering, input size/type errors, stale demo rejection, server error recovery, five responsive widths, and no external requests.');
+    console.log('PASS: demo, assembly, paired previews, export review gate, force/unforce rerun, DPI invalidation, delayed create cancellation, stale poll rejection, local file replacement, safe filename rendering, input size/type errors, stale demo rejection, server error recovery, five responsive widths, hidden/focused/scrolled skip-link states, and no external requests.');
   } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
 })().catch(error => { console.error(error); process.exitCode = 1; server.close(); });

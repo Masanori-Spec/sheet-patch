@@ -253,7 +253,14 @@ def render_sides(path, doc, dpi, work, prefix, progress):
         except subprocess.TimeoutExpired as exc:
             raise InputError('A PDF side exceeded the 25-second renderer limit.') from exc
         if process.returncode or process.stderr.strip():
-            raise InputError('The renderer reported an error or warning; repair or flatten the PDF first.')
+            # Diagnostics stay local. Bound and normalize untrusted renderer text;
+            # never ignore warnings or dump an input document into a log.
+            diagnostic = ' '.join(process.stderr.decode('utf-8', errors='replace').split())
+            diagnostic = ''.join(c for c in diagnostic if c.isprintable())[:800]
+            detail = f' Exit code {process.returncode}.'
+            if diagnostic:
+                detail += ' Renderer diagnostic: ' + diagnostic
+            raise InputError('The renderer reported an error or warning; repair or flatten the PDF first.' + detail)
         ppm = stem.with_suffix('.ppm')
         if not ppm.exists() or ppm.stat().st_size > MAX_SIDE_PIXELS*3+1024:
             raise InputError('Renderer output exceeds the supported limit.')

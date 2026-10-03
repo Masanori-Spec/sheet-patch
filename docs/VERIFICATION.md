@@ -4,7 +4,7 @@ Local source verification, 2026-10-03. This file records observed results; CI/br
 
 ## Executed locally
 
-- 51 Python unit/integration/review tests passed on Python 3.12.14, Linux
+- 52 Python unit/integration/review tests passed on Python 3.12.14, Linux
 - 14,641 exhaustive small old/new sequences checked for maximum matching count, one-use old supply, exact ordered-pair equality, same-position reservation and retire partition
 - Separate forced-demand exhaustive cases ensure forced new positions do not consume reusable old supply
 - PDF fixtures cover unchanged, changed back, reordered sheets, insertion/deletion, duplicate and blank sheets, swapped sides, geometry difference, forced reprint and no-empty-PDF behavior
@@ -18,6 +18,9 @@ Local source verification, 2026-10-03. This file records observed results; CI/br
 The local environment's bundled Poppler emitted Fontconfig cache errors. Those errors were not suppressed. Verification used the installed system Poppler **25.03.0** with a writable temporary Fontconfig configuration/cache and recorded the renderer version. Font substitution can differ from a user's machine; comparison remains within one run. CI uses its OS-distributed Poppler and records that version separately.
 
 ## Browser status
+
+Initial public CI at commit `acb866c3963850538ac0022989a8a92aab4d153d` passed both Python 3.12/3.13 jobs and the mock browser suite, but the real-backend browser test rejected a renderer warning/error. The initial generic message did not expose its cause. A follow-up preserves strict rejection, adds bounded renderer diagnostics and a synthetic preflight after browser font installation, and corrects a skip-link visibility defect found in the screenshots. The updated browser suite remains pending until CI proves it passes. [Initial run](https://github.com/Masanori-Spec/sheet-patch/actions/runs/37122609710)
+
 
 Local Chromium could not launch because this environment prohibits its process-singleton socket. No sandbox bypass was attempted and no local visual/browser pass is claimed. Both authored browser suites launch Chromium with `chromiumSandbox: true` on Ubuntu 22.04 CI:
 

@@ -133,6 +133,18 @@ class PdfTests(unittest.TestCase):
         for dpi,force in ((73,[]),(True,[]),(72,[True]),(72,[99])):
             with self.subTest(dpi=dpi,force=force),self.assertRaises(InputError):
                 analyze(self.path('old.pdf',a),self.path('new.pdf',b),self.root,dpi=dpi,force=force)
+    def test_renderer_diagnostics_are_visible_bounded_and_fail_closed(self):
+        blob=make_pdf(['a','b']);doc=inspect_pdf(self.path('old.pdf',blob),'old',72)
+        from sheet_patch.engine import render_sides
+        from types import SimpleNamespace
+        with patch('sheet_patch.engine.subprocess.run',return_value=SimpleNamespace(returncode=0,stderr=b'Fontconfig error: example cache failure\n'+b'x'*5000)):
+            with self.assertRaises(InputError) as caught:
+                render_sides(self.root/'old.pdf',doc,72,self.root,'old',lambda _:None)
+        self.assertIn('Fontconfig error: example cache failure',str(caught.exception))
+        self.assertIn('Exit code 0',str(caught.exception))
+        self.assertLess(len(str(caught.exception)),1000)
+        self.assertFalse((self.root/'packet.zip').exists())
+
     def test_html_escape(self):
         r=self.run_plan(*demo_files(),old_name='<img src=x onerror=alert(1)>.pdf')
         report=report_html(r)
