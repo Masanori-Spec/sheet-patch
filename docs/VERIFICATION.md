@@ -1,6 +1,18 @@
 # Verification record
 
-Local source verification, 2026-10-03. This file records observed results; CI/browser completion must be tied to the published commit before claiming public verification.
+Observed verification, 2026-10-03. Exact tested code commit: [`c6a61766a0d263d81a57420c1c8a31514a50e566`](https://github.com/Masanori-Spec/sheet-patch/commit/c6a61766a0d263d81a57420c1c8a31514a50e566).
+
+## Public CI passed
+
+[Run 37123748419](https://github.com/Masanori-Spec/sheet-patch/actions/runs/37123748419) completed successfully for that exact commit. All three jobs passed:
+
+- Python 3.12: 59 tests, four JS model tests and syntax checks
+- Python 3.13: 59 tests, four JS model tests and syntax checks
+- Chromium: mock and real-backend browser suites with `chromiumSandbox: true` on Ubuntu 22.04
+
+The real suite exercised synthetic PDFs through the local worker, correct whole-sheet counts and assignments, actual ordered front/back PNGs, downloaded ZIP inspection, force/unforce reruns and five viewport widths. Page requests stayed on loopback. The mock suite covered stale/cancelled asynchronous responses, error recovery, file validation, safe filenames, review-gated export, responsive layout and hidden/focused/scrolled skip-link states.
+
+Actual desktop and mobile screenshots were visually inspected: readable layout, correct PDF side previews, visible Fontconfig environment notices, no floating unfocused skip link and a correctly visible keyboard-focused skip link. Browser artifacts and logs are attached to the linked CI run.
 
 ## Executed locally
 
@@ -17,20 +29,13 @@ Local source verification, 2026-10-03. This file records observed results; CI/br
 
 The local environment's bundled Poppler emitted Fontconfig cache errors. Those errors were not suppressed. Verification used the installed system Poppler **25.03.0** with a writable temporary Fontconfig configuration/cache and recorded the renderer version. Font substitution can differ from a user's machine; comparison remains within one run. CI uses its OS-distributed Poppler and records that version separately.
 
-## Browser status
+## Issues found and corrected
 
-Initial public CI at commit `acb866c3963850538ac0022989a8a92aab4d153d` passed both Python 3.12/3.13 jobs and the mock browser suite, but the real-backend browser test rejected a generic renderer diagnostic. [Initial run](https://github.com/Masanori-Spec/sheet-patch/actions/runs/37122609710)
+Earlier CI rejected exit-0 `Unable to revert mtime` messages produced by Fontconfig's cache UUID/timestamp-maintenance path. The corrected code recognizes only exact, complete, valid-UTF-8 maintenance lines with absolute paths and preserves them in JSON `environmentNotices` plus visible UI/HTML warnings. Unknown or mixed diagnostics, PDF/font warnings, malformed bytes/control framing, oversized notices and nonzero exits remain fatal. Local injection tests verify the notice is retained while replacement raster verification still succeeds. The successful real-browser screenshots confirm this notice path was exercised in CI.
 
-[Diagnostic revision CI](https://github.com/Masanori-Spec/sheet-patch/actions/runs/37123156366) passed the cold CLI preflight and mock browser checks, while actual browser-driven rendering returned exit 0 with `Unable to revert mtime` notices for system font directories. The exact diagnostic is from Fontconfig's cache UUID/timestamp-maintenance path, not PDF parsing. Current code preserves these narrowly recognized notices in `environmentNotices` and visible UI/HTML warnings. It still rejects unknown diagnostics, PDF warnings, substitution errors and nonzero exits. A local end-to-end regression injects the notice into real rendering, verifies it is retained in the packet, and verifies the replacement raster still matches. Independent boundary regressions reject malformed UTF-8, control framing, mixed warnings, nonzero exits and oversized notices, and preserve valid Unicode paths with stable deduplication. Public real-browser completion remains pending until the corrected commit passes CI.
+Screenshots also exposed an unfocused skip link floating over a scrolled page. Zero-area clipping with keyboard-focus restoration corrected it; desktop/mobile focus and scroll regressions passed, and the resulting screenshots were inspected.
 
-The screenshot-confirmed floating skip-link defect was corrected with clipped-but-focusable styling plus focus/scrolled desktop/mobile regressions. Revision screenshots confirmed the unfocused overlay is gone.
-
-Local Chromium could not launch because this environment prohibits its process-singleton socket. No sandbox bypass was attempted and no local visual/browser pass is claimed. Both authored browser suites launch Chromium with `chromiumSandbox: true` on Ubuntu 22.04 CI:
-
-- Mock API suite: stale demo/create/poll responses, cancelled late job creation, force/unforce and DPI reruns, error recovery, safe filename rendering, input size/type checks, review-gated export, five viewport widths, external-request detection
-- Real backend suite: synthetic PDFs through the bounded worker, correct keep/move/reprint/retire counts, actual front/back PNGs, downloaded ZIP inspection, force/unforce reruns, five viewport widths, screenshots and external-request detection
-
-Screenshots and CI outcomes must be inspected for the published commit. The workflow's existence does not establish they passed. Ubuntu 22.04's announced hosted-runner retirement is April 17, 2027; plan a sandbox-compatible migration.
+Local Chromium launch remains prohibited by this development environment's process-singleton socket restriction. No sandbox bypass was attempted. Browser verification was performed in the successful sandbox-enabled CI run above. Ubuntu 22.04's announced hosted-runner retirement is April 17, 2027; migrate the browser job to another sandbox-compatible runner before then.
 
 ## Benchmarks, not guarantees
 

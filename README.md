@@ -70,6 +70,8 @@ Within this exact raster-key model, the assignment maximizes reused sheet count,
 
 ## Verification and development
 
+Verified on 2026-10-03 at code commit [`c6a61766a0d263d81a57420c1c8a31514a50e566`](https://github.com/Masanori-Spec/sheet-patch/commit/c6a61766a0d263d81a57420c1c8a31514a50e566): all three [CI jobs passed](https://github.com/Masanori-Spec/sheet-patch/actions/runs/37123748419), including 59 Python tests on both 3.12 and 3.13, four JS model tests, and sandbox-enabled mock/real-backend Chromium suites. Real PDF previews, downloaded replacement packets, force/unforce reruns and desktop/mobile screenshots were checked. [Detailed verification record](docs/VERIFICATION.md)
+
 ```sh
 python -m unittest discover -s tests -v
 node --test web/ui-tests/model.test.mjs
